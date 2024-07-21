@@ -17,34 +17,41 @@ export function activate(context: vscode.ExtensionContext) {
             const lineLength = lineText.length;
 
              // Find the first occurrence of '=' or '<-'
-             const equalsIndex = lineText.indexOf('=');
-             const assignmentIndex = lineText.indexOf('<-');
-            let startIndex = -1;
+            // const equalsIndex = lineText.indexOf('=');
+            // const assignmentIndex = lineText.indexOf('<-');
+            const operators = ['===', '==', '=', '<-'];
+             let startIndex = -1;
              //let endPosition = lineLength;
  
-             if (equalsIndex !== -1 && (assignmentIndex === -1 || equalsIndex < assignmentIndex)) {
-                startIndex = equalsIndex + 1;
-            } else if (assignmentIndex !== -1) {
-                startIndex = assignmentIndex + 2; // +2 because '<-' is 2 characters
+            // Check for operators and determine startIndex
+            for (const op of operators) {
+                const index = lineText.indexOf(op);
+                if (index !== -1) {
+                    startIndex = index + op.length;
+                    break;
+                }
             }
 
-            if (startIndex !== -1) {
-                // Extract the substring after the assignment
-                const substring = lineText.substring(startIndex).trim();
+            // If no operator is found, use the start of the line
+            if (startIndex === -1) {
+                startIndex = 0;
+            }
 
-                // Find the actual start of the string content after any spaces
-                const firstNonWhitespaceIndex = startIndex + lineText.substring(startIndex).search(/\S/);
+            // Extract and trim the substring after the determined startIndex
+            const substring = lineText.substring(startIndex).trim();
+            const firstNonWhitespaceIndex = lineText.indexOf(substring, startIndex);
 
-                // Calculate end position for the quote
-                const endPosition = lineText.length;
+            // Define positions for inserting apostrophes
+            const actualStart = firstNonWhitespaceIndex;
+            const actualEnd = lineLength;
 
-                if (position.character === endPosition) {
-                    editor.edit(editBuilder => {
-                        // Insert apostrophe at the start and end of the substring
-                        editBuilder.insert(new vscode.Position(position.line, firstNonWhitespaceIndex), "'");
-                        editBuilder.insert(new vscode.Position(position.line, lineText.length), "'");
-                    });
-                }
+            // Insert apostrophes if at the end of the line or start of the string
+            if (position.character === lineLength || position.character === actualStart) {
+                editor.edit(editBuilder => {
+                    // Insert apostrophe at the start and end of the content
+                    editBuilder.insert(new vscode.Position(position.line, actualStart), "'");
+                    editBuilder.insert(new vscode.Position(position.line, actualEnd), "'");
+                });
             }
         }
     });
