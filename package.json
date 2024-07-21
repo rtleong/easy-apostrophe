@@ -14,9 +14,16 @@
   "contributes": {
     "commands": [
       {
-        "command": "easyapostrophe.helloWorld",
-        "title": "Hello World"
+        "command": "extension.easyapostrophe",
+        "title": "Easy Apostrophe"
       }
+    ],
+    "keybindings": [
+        {
+          "command": "extension.easyapostrophe",
+          "key": "'",
+          "when": "editorTextFocus"
+        }
     ]
   },
   "scripts": {
