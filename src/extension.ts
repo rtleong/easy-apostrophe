@@ -16,16 +16,33 @@ export function activate(context: vscode.ExtensionContext) {
             const lineText = document.lineAt(position.line).text;
             const lineLength = lineText.length;
 
-            // Check if the cursor is at the end of the string
-            if (position.character === lineLength) {
-                // Find the first non-whitespace character
-                const firstNonWhitespaceIndex = lineText.search(/\S/);
+             // Find the first occurrence of '=' or '<-'
+             const equalsIndex = lineText.indexOf('=');
+             const assignmentIndex = lineText.indexOf('<-');
+            let startIndex = -1;
+             //let endPosition = lineLength;
+ 
+             if (equalsIndex !== -1 && (assignmentIndex === -1 || equalsIndex < assignmentIndex)) {
+                startIndex = equalsIndex + 1;
+            } else if (assignmentIndex !== -1) {
+                startIndex = assignmentIndex + 2; // +2 because '<-' is 2 characters
+            }
 
-                if (firstNonWhitespaceIndex !== -1) {
+            if (startIndex !== -1) {
+                // Extract the substring after the assignment
+                const substring = lineText.substring(startIndex).trim();
+
+                // Find the actual start of the string content after any spaces
+                const firstNonWhitespaceIndex = startIndex + lineText.substring(startIndex).search(/\S/);
+
+                // Calculate end position for the quote
+                const endPosition = lineText.length;
+
+                if (position.character === endPosition) {
                     editor.edit(editBuilder => {
-                        // Insert apostrophe at the start and end of the string
+                        // Insert apostrophe at the start and end of the substring
                         editBuilder.insert(new vscode.Position(position.line, firstNonWhitespaceIndex), "'");
-                        editBuilder.insert(position, "'");
+                        editBuilder.insert(new vscode.Position(position.line, lineText.length), "'");
                     });
                 }
             }
