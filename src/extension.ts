@@ -16,42 +16,101 @@ export function activate(context: vscode.ExtensionContext) {
             const lineText = document.lineAt(position.line).text;
             const lineLength = lineText.length;
 
-             // Find the first occurrence of '=' or '<-'
-            // const equalsIndex = lineText.indexOf('=');
-            // const assignmentIndex = lineText.indexOf('<-');
+            // Handle content inside parentheses
+            const openParenIndex = lineText.lastIndexOf('(', position.character);
+            const closeParenIndex = lineText.indexOf(')', position.character);
+
+            if (openParenIndex !== -1 && closeParenIndex !== -1 && openParenIndex < closeParenIndex) {
+                // Extract the content inside the parentheses
+                let contentInsideParens = lineText.substring(openParenIndex + 1, closeParenIndex);
+
+                // Find operators within parentheses
+                const operators = ['===', '==', '=', '<-'];
+                let startIndex = -1;
+
+                for (const op of operators) {
+                    const index = contentInsideParens.indexOf(op);
+                    if (index !== -1) {
+                        startIndex = index + op.length;
+                        break;
+                    }
+                }
+
+                // If no operator is found, use the start of the content inside parentheses
+                if (startIndex === -1) {
+                    startIndex = 0;
+                }
+
+                // Handle comma-separated values within parentheses
+                const substring = contentInsideParens.substring(startIndex).trim();
+                const parts = substring.split(/,\s*/);
+                if (parts.length > 1) {
+                    const quotedParts = parts.map(part => `'${part}'`);
+                    const result = quotedParts.join(', ');
+
+                    // Replace only the content to the right of the operator
+                    const actualStart = openParenIndex + 1 + startIndex;
+                    const actualEnd = closeParenIndex;
+
+                    editor.edit(editBuilder => {
+                        editBuilder.replace(new vscode.Range(new vscode.Position(position.line, actualStart), new vscode.Position(position.line, actualEnd)), result);
+                    });
+                } else {
+                    const result = `'${substring}'`;
+
+                    // Replace only the content to the right of the operator
+                    const actualStart = openParenIndex + 1 + startIndex;
+                    const actualEnd = closeParenIndex;
+
+                    editor.edit(editBuilder => {
+                        editBuilder.replace(new vscode.Range(new vscode.Position(position.line, actualStart), new vscode.Position(position.line, actualEnd)), result);
+                    });
+                }
+                return; // Exit after handling parentheses content
+            }
+
+            // Handle content after operators outside parentheses
             const operators = ['===', '==', '=', '<-'];
-             let startIndex = -1;
-             //let endPosition = lineLength;
- 
-            // Check for operators and determine startIndex
+            let startIndexOperator = -1;
+            let operatorLength = 0;
+
             for (const op of operators) {
                 const index = lineText.indexOf(op);
-                if (index !== -1) {
-                    startIndex = index + op.length;
+                if (index !== -1 && index + op.length <= position.character) {
+                    startIndexOperator = index + op.length;
+                    operatorLength = op.length;
                     break;
                 }
             }
 
-            // If no operator is found, use the start of the line
-            if (startIndex === -1) {
-                startIndex = 0;
+            if (startIndexOperator === -1) {
+                startIndexOperator = 0;
             }
 
-            // Extract and trim the substring after the determined startIndex
-            const substring = lineText.substring(startIndex).trim();
-            const firstNonWhitespaceIndex = lineText.indexOf(substring, startIndex);
+            // Extract the content after the operator or from the start if no operator is found
+            const substring = lineText.substring(startIndexOperator).trim();
+            const parts = substring.split(/,\s*/);
+            if (parts.length > 1) {
+                const quotedParts = parts.map(part => `'${part}'`);
+                const result = quotedParts.join(', ');
 
-            // Define positions for inserting apostrophes
-            const actualStart = firstNonWhitespaceIndex;
-            const actualEnd = lineLength;
+                const actualStart = startIndexOperator;
+                const actualEnd = lineLength;
 
-            // Insert apostrophes if at the end of the line or start of the string
-            if (position.character === lineLength || position.character === actualStart) {
                 editor.edit(editBuilder => {
-                    // Insert apostrophe at the start and end of the content
-                    editBuilder.insert(new vscode.Position(position.line, actualStart), "'");
-                    editBuilder.insert(new vscode.Position(position.line, actualEnd), "'");
+                    editBuilder.replace(new vscode.Range(new vscode.Position(position.line, actualStart), new vscode.Position(position.line, actualEnd)), result);
                 });
+            } else {
+                const firstNonWhitespaceIndex = lineText.indexOf(substring, startIndexOperator);
+                const actualStart = firstNonWhitespaceIndex;
+                const actualEnd = lineLength;
+
+                if (position.character === lineLength || position.character === actualStart) {
+                    editor.edit(editBuilder => {
+                        editBuilder.insert(new vscode.Position(position.line, actualStart), "'");
+                        editBuilder.insert(new vscode.Position(position.line, actualEnd), "'");
+                    });
+                }
             }
         }
     });
