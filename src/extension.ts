@@ -16,6 +16,30 @@ export function activate(context: vscode.ExtensionContext) {
             const lineText = document.lineAt(position.line).text;
             const lineLength = lineText.length;
 
+            // Check if the next character is a newline
+            if (position.character < lineLength && lineText[position.character] === '\n') {
+                // Find the first non-space character to the left of the position
+                let leftIndex = position.character - 1;
+                while (leftIndex >= 0 && lineText[leftIndex] === ' ') {
+                    leftIndex--;
+                }
+
+                // Check if the first non-space character is an operator
+                const operators = ['===', '==', '=', '<-'];
+                const isOperator = operators.some(op => {
+                    const opLen = op.length;
+                    return leftIndex - opLen + 1 >= 0 && lineText.substring(leftIndex - opLen + 1, leftIndex + 1) === op;
+                });
+
+                if (isOperator) {
+                    // Insert a single quote and exit
+                    editor.edit(editBuilder => {
+                        editBuilder.insert(position, "'");
+                    });
+                    return;
+                }
+            }
+
             // Handle content inside parentheses
             const openParenIndex = lineText.lastIndexOf('(', position.character);
             const closeParenIndex = lineText.indexOf(')', position.character);
