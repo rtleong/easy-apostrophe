@@ -6,7 +6,7 @@
 
 ## Features
 
-* If you are finished typing out your string, integer, or list, and realize you forgot to encase the content in single-quotes... simply key a single quote!
+* If you are finished typing out your string, integer, or list, and realize you forgot to encase the content in single-quotes... simply type `ctrl+'`!
 * Easy Apostrophe will automatically wrap your string, integer, or list in single quotes
 * Unlike many other extensions, Easy Apostrophe has support for:
   * Comma-Delimited-Lists

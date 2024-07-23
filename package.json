@@ -21,7 +21,7 @@
     "keybindings": [
         {
           "command": "extension.easyapostrophe",
-          "key": "'",
+          "key": "ctrl+'",
           "when": "editorTextFocus"
         }
     ]
