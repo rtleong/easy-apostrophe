@@ -13,4 +13,3 @@
   * Detecting whether the user is in a `if` statement or `for` loop
 * Other features:
   * If the cursor is not at the end of a string, list, or integer, Easy Apostrophe will follow VS Code standard functionality
-  * TO BE IMPLEMENTED: Press "ctr + alt + '" to do this, and keep regular regular
